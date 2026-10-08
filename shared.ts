@@ -197,6 +197,10 @@ export function launchRun(metadata: RunMetadata, initialArgs: string[] = []): vo
 		{ encoding: "utf8" },
 	);
 	if (result.status !== 0) throw new Error(result.stderr.trim() || "Failed to create tmux session");
+
+	spawnSync("tmux", ["set", "-s", "extended-keys", "on"], { stdio: "ignore" });
+	spawnSync("tmux", ["set", "-s", "extended-keys-format", "csi-u"], { stdio: "ignore" });
+	spawnSync("tmux", ["set", "-t", metadata.tmuxSession, "status", "off"], { stdio: "ignore" });
 }
 
 export function effectiveRunState(metadata: RunMetadata): RunState {
