@@ -201,6 +201,8 @@ export function launchRun(metadata: RunMetadata, initialArgs: string[] = []): vo
 	spawnSync("tmux", ["set", "-s", "extended-keys", "on"], { stdio: "ignore" });
 	spawnSync("tmux", ["set", "-s", "extended-keys-format", "csi-u"], { stdio: "ignore" });
 	spawnSync("tmux", ["set", "-t", metadata.tmuxSession, "status", "off"], { stdio: "ignore" });
+	spawnSync("tmux", ["set", "-t", metadata.tmuxSession, "prefix", "C-a"], { stdio: "ignore" });
+	spawnSync("tmux", ["bind-key", "C-a", "send-prefix"], { stdio: "ignore" });
 }
 
 export function effectiveRunState(metadata: RunMetadata): RunState {

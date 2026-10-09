@@ -68,7 +68,7 @@ subagent stop a1b2c3
 subagent list
 ```
 
-Use `/subagent` to select and attach to an active child. The status widget shows active names (or handles for unnamed runs) and their current state.
+Use `/subagent` to select and attach to an active child. Subagent tmux sessions use `C-a` as the prefix key instead of tmux's default `C-b` (detach with `C-a d`). The status widget shows active names (or handles for unnamed runs) and their current state.
 
 ## Isolation
 
