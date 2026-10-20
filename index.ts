@@ -3,7 +3,15 @@ import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DynamicBorder, type ExtensionAPI, type ExtensionContext, keyHint } from "@earendil-works/pi-coding-agent";
-import { Container, type SelectItem, SelectList, Text, type TUI } from "@earendil-works/pi-tui";
+import {
+	Container,
+	type SelectItem,
+	SelectList,
+	Text,
+	truncateToWidth,
+	type TUI,
+	visibleWidth,
+} from "@earendil-works/pi-tui";
 import {
 	effectiveRunState,
 	inboxDir,
@@ -131,17 +139,39 @@ export default function subagentExtension(pi: ExtensionAPI) {
 				return;
 			}
 
-			const visible = activeRuns.slice(0, 5).map(({ run, state }) => {
-				const color =
-					state === "busy" ? "warning" : state === "idle" ? "success" : state === "error" ? "error" : "muted";
-				return widgetContext!.ui.theme.fg(color, `${run.name ?? run.handle}:${state}`);
-			});
-			if (activeRuns.length > visible.length) {
-				visible.push(widgetContext.ui.theme.fg("muted", `+${activeRuns.length - visible.length}`));
-			}
 			widgetContext.ui.setWidget(
 				"subagents",
-				[widgetContext.ui.theme.fg("dim", "subagents: ") + visible.join(widgetContext.ui.theme.fg("dim", " | "))],
+				(_tui, theme) => ({
+					render: (width) => {
+						const separator = theme.fg("dim", " | ");
+						const chips = activeRuns.map(({ run, state }) =>
+							theme.fg(
+								state === "busy" ? "warning" : state === "idle" ? "success" : state === "error" ? "error" : "muted",
+								`${run.name ?? run.handle}:${state}`,
+							),
+						);
+						const counter = (count: number): string => theme.fg("muted", `+${count}`);
+						const suffix = (count: number): string => (count > 0 ? ` ${counter(count)}` : "");
+						let line = theme.fg("dim", "subagents: ");
+						let used = 1 + visibleWidth(line);
+						let shown = 0;
+						for (const [index, chip] of chips.entries()) {
+							const cost = (shown > 0 ? visibleWidth(separator) : 0) + visibleWidth(chip);
+							if (used + cost + visibleWidth(suffix(chips.length - index - 1)) > width) break;
+							line += (shown > 0 ? separator : "") + chip;
+							used += cost;
+							shown++;
+						}
+						if (shown === 0) {
+							const labelled = line.trimEnd() + suffix(chips.length);
+							line = visibleWidth(labelled) <= width - 1 ? labelled : counter(chips.length);
+						} else {
+							line += suffix(chips.length - shown);
+						}
+						return [` ${truncateToWidth(line, width - 1)}`];
+					},
+					invalidate: () => {},
+				}),
 				{ placement: "belowEditor" },
 			);
 		};
